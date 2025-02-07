@@ -2,55 +2,68 @@ import React from 'react';
 import Card from './components/Card';
 import Header from './components/Header';
 import Drawer from './components/Drawer';
+import axios from 'axios';
 
 function App() {
   const [items, setItems] = React.useState([]);
   const [cartItems, setCartItems] = React.useState([]);
+  const [searchValue, setSearchValue] = React.useState('');
   const [cartOpened, setCartOpened] = React.useState(false);
 
   React.useEffect(() =>{
-    fetch('https://679d0d3e87618946e65439ab.mockapi.io/items').then(res => {
-      return res.json();
-    })
-    .then(json =>{
-      setItems(json);
-    });
-  },[]);
+    //fetch('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/sneakers').then(res => {
+    //  return res.json();
+    //})
+    //.then(json =>{
+    //  setItems(json);
+    //});
 
-  const onAddToCart = (obj) =>{
-    setCartItems((prev) => {
-      // Чекаю чи є товар в корзині
-      const isItemInCart = prev.some((item) => item.imageUrl === obj.imageUrl);
-      if (isItemInCart) {
-        // Якщо є товар - забираю
-        return prev.filter((item) => item.imageUrl !== obj.imageUrl);
-      } else {
-        // Якщо нема товару - добавляю
-        return [...prev, obj];
-      }
+    axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/sneakers/').then((res) => {
+      setItems(res.data);
+    });
+    axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/').then((res) => {
+      setCartItems(res.data);
+    });
+  }, []);
+
+  const onAddToCart = (obj) => {
+    setCartItems((prev) => [...prev, obj]);
+    axios.put('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/', {value:  [...cartItems, obj]
     });
   };
 
+   const onRemoveItem = (id) => {
+    //console.log(id);
+     setCartItems((prev) => prev.filter(item => item.id !== id));
+     //axios.delete(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/${id}`);
+   }
+
+  const onChangeSearchInput = (event) =>{
+    setSearchValue(event.target.value);
+  }
 
   return (
     <div className="wrapper clear"> 
-      {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)}/>} 
+      {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem}/>} 
       <Header onClickCart={() => setCartOpened(true)} />
     
 
     <div className="content p-40">
       <div className="d-flex align-center justify-between mb-40">
-        <h1>All sneakers</h1>  
+        <h1>{searchValue ? `Search for: "${searchValue}"` : 'All sneakers'}</h1>  
         <div className="search-block d-flex">
           <img src="/img/search.svg" alt="Search" />
-          <input placeholder="Search..."/>
+          {searchValue && <img onClick={()=> setSearchValue('')} className="clear cu-p" src="/img/btn-remove.svg" alt="Clear"/>}
+          <input onChange={onChangeSearchInput} value={searchValue} placeholder="Search..."/>
         </div>
       </div>
 
     
       <div className="d-flex flex-wrap"> 
-          {items.map((item) => (
+          {items.filter(item => item.title.toLowerCase().includes(searchValue)).map((item, index) => (
           <Card 
+            key={index}
+            id={item.id}
             title={item.title} 
             price={item.price +' $'} 
             imageUrl={item.imageUrl} 
