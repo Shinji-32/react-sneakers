@@ -32,11 +32,12 @@ function App() {
     });
   };
 
-   const onRemoveItem = (id) => {
+  const onRemoveItem = (id) => {
     //console.log(id);
-     setCartItems((prev) => prev.filter(item => item.id !== id));
-     //axios.delete(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/${id}`);
-   }
+    axios.put(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/`, {value: cartItems.filter((item) => item.id !== id)});
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
 
   const onChangeSearchInput = (event) =>{
     setSearchValue(event.target.value);
