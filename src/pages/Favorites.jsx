@@ -1,7 +1,13 @@
+import React from 'react';
 import Card from '../components/Card';
+import AppContext from '../context';
 
-function Favorites({items, searchValue, setSearchValue, onChangeSearchInput, onAddToFavorite}){
-    return(
+function Favorites({ searchValue, setSearchValue, onChangeSearchInput }){
+ 
+  const { favorites, onAddToFavorite } = React.useContext(AppContext);
+
+
+    return (
         <div className="content p-40">
           <div className="d-flex align-center justify-between mb-40">
             <h1>{searchValue ? `Search for: "${searchValue}"` : 'All sneakers'}</h1>  
@@ -14,7 +20,7 @@ function Favorites({items, searchValue, setSearchValue, onChangeSearchInput, onA
 
       
           <div className="d-flex flex-wrap"> 
-            {items.map((item, index) => (
+            {favorites.map((item, index) => (
                 <Card 
                   key={index}
                   id={item.id}

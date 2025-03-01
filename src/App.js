@@ -3,9 +3,12 @@ import {Routes, Route} from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header';
 import Drawer from './components/Drawer';
+import AppContext from './context';
 
 import Home from './pages/Home';
 import Favorites from './pages/Favorites';
+
+
 
 function App() {
   const [items, setItems] = React.useState([]);
@@ -13,6 +16,7 @@ function App() {
   const [favorites, setFavorites] = React.useState([]);
   const [searchValue, setSearchValue] = React.useState('');
   const [cartOpened, setCartOpened] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   
 
   React.useEffect(() =>{
@@ -23,22 +27,32 @@ function App() {
     //  setItems(json);
     //});
 
-    axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/sneakers/').then((res) => {
-      setItems(res.data);
-    });
-    axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/').then((res) => {
-      setCartItems(res.data);
-    });
-    axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/favorites/').then((res) => {
-      setFavorites(res.data);
-    });
+    async function fetchData() {
+      //setIsLoading(true); можна юзати якщо функція відбувається більше 1 разу
+      //оскільки загрузка відбувається 1 раз, перед відправкою запиту, то сенсу нема
+      const cartResponse = await axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/');
+      const favoritesResponse = await axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/favorites/');
+      const itemsResponse = await axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/sneakers/');
+
+      setIsLoading(false);
+
+      setCartItems(cartResponse.data);
+      setFavorites(favoritesResponse.data);
+      setItems(itemsResponse.data);
+    }
+
+    fetchData();
   }, []);
 
   //метод
   const onAddToCart = (obj) => {
-    setCartItems((prev) => [...prev, obj]);
-    axios.put('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/', {value:  [...cartItems, obj]
-    });
+    if (cartItems.find((item) => Number(item.id) === Number(obj.id))) {
+      axios.put(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/`, {value: cartItems.filter((item) => item.id !== obj.id)});
+      setCartItems(prev => prev.filter(item => Number(item.id) !== Number(obj.id)));
+    } else {
+      setCartItems((prev) => [...prev, obj]);
+      axios.put('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/', {value:  [...cartItems, obj]});
+    };
   };
 
   const onRemoveItem = (id) => {
@@ -71,40 +85,48 @@ function App() {
     setSearchValue(event.target.value);
   };
 
+
+  const isItemAdded = (id) => {
+    return cartItems.some((obj) => Number(obj.id) === Number(id))
+  };
+
+
   return (
-    <div className="wrapper clear"> 
-      {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem}/>} 
-      <Header onClickCart={() => setCartOpened(true)} />
-    
-      <Routes>
-      <Route path="/"
-          element={
-            <Home
-              items={items}
-              searchValue={searchValue}
-              setSearchValue={setSearchValue}
-              onChangeSearchInput={onChangeSearchInput}
-              onAddToFavorite={onAddToFavorite}
-              onAddToCart={onAddToCart}
-            />
-          }
-          exact
-        />
-      </Routes>
-
+    <AppContext.Provider value={{items, cartItems, favorites, isItemAdded, onAddToFavorite, setCartOpened, setCartItems }}>
+        <div className="wrapper clear"> 
+        {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem}/>} 
+        <Header onClickCart={() => setCartOpened(true)} />
       
-      <Routes>
-      <Route path="/favorites"
-          element={
-            <Favorites items={favorites} 
-            onAddToFavorite = {onAddToFavorite}
-            />
-          }
-          exact
-        />
-      </Routes>
+        <Routes>
+        <Route path="/"
+            element={
+              <Home
+                items={items}
+                cartItems={cartItems}
+                searchValue={searchValue}
+                setSearchValue={setSearchValue}
+                onChangeSearchInput={onChangeSearchInput}
+                onAddToFavorite={onAddToFavorite}
+                onAddToCart={onAddToCart}
+                isLoading = {isLoading}
+              />
+            }
+            exact
+          />
+        </Routes>
 
-    </div>
+        <Routes>
+        <Route path="/favorites"
+            element={
+              <Favorites items={favorites} onAddToFavorite = {onAddToFavorite}
+              />
+            }
+            exact
+          />
+        </Routes>
+      </div>
+    </AppContext.Provider>
+    
   );
 }
 

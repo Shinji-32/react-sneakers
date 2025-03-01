@@ -1,7 +1,34 @@
-import Card from '../components/Card';
+import React from 'react';
 
-function Home({items, searchValue, setSearchValue, onChangeSearchInput, onAddToFavorite, onAddToCart}){
-    return(
+import Card from '../components/Card';
+import AppContext from '../context';
+
+
+function Home({items, searchValue, setSearchValue, onChangeSearchInput, onAddToFavorite, onAddToCart, isLoading}){
+  
+  const {isItemAdded} = React.useContext(AppContext);
+
+  const renderItems = () => {
+    const filtredItems = items.filter((item) => 
+      item.title.toLowerCase().includes(searchValue.toLowerCase())
+    );
+    return (isLoading ? [...Array(10)] : filtredItems).map((item, index) => (
+      <Card 
+        key={index}
+        id={item?.id}
+        title={item?.title}  
+        price={item?.price +' $'} 
+        imageUrl={item?.imageUrl} 
+        onFavorite={(obj) => onAddToFavorite(obj)}
+        onPlus={(obj) => onAddToCart(item)}
+        added={isItemAdded(item && item.id)}
+        loading={isLoading}
+        
+      />
+    ));
+  };
+
+  return(
         <div className="content p-40">
           <div className="d-flex align-center justify-between mb-40">
             <h1>{searchValue ? `Search for: "${searchValue}"` : 'All sneakers'}</h1>  
@@ -14,21 +41,10 @@ function Home({items, searchValue, setSearchValue, onChangeSearchInput, onAddToF
 
       
           <div className="d-flex flex-wrap"> 
-              {items.filter(item => item.title.toLowerCase().includes(searchValue)).map((item, index) => (
-              <Card 
-                key={index}
-                id={item.id}
-                title={item.title} 
-                price={item.price +' $'} 
-                imageUrl={item.imageUrl} 
-                onFavorite={(obj) =>onAddToFavorite(obj)}
-                onPlus={(obj) => onAddToCart(item)}
-              />
-            ))}
-
+              {renderItems()}
           </div>
       </div>
-    )
+  );
 }
 
 export default Home;
