@@ -7,6 +7,7 @@ import AppContext from './context';
 
 import Home from './pages/Home';
 import Favorites from './pages/Favorites';
+import Orders from './pages/Orders';
 
 
 
@@ -17,6 +18,7 @@ function App() {
   const [searchValue, setSearchValue] = React.useState('');
   const [cartOpened, setCartOpened] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+
   
 
   React.useEffect(() =>{
@@ -92,7 +94,7 @@ function App() {
 
 
   return (
-    <AppContext.Provider value={{items, cartItems, favorites, isItemAdded, onAddToFavorite, setCartOpened, setCartItems }}>
+    <AppContext.Provider value={{items, cartItems, favorites, isItemAdded, onAddToFavorite, onAddToCart, setCartOpened, setCartItems }}>
         <div className="wrapper clear"> 
         {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem}/>} 
         <Header onClickCart={() => setCartOpened(true)} />
@@ -123,6 +125,15 @@ function App() {
             }
             exact
           />
+
+
+        <Route path="/orders"
+                    element={
+                      <Orders />
+                    }
+                    exact
+                  />
+
         </Routes>
       </div>
     </AppContext.Provider>
