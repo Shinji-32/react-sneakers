@@ -30,37 +30,53 @@ function App() {
     //});
 
     async function fetchData() {
-      //setIsLoading(true); можна юзати якщо функція відбувається більше 1 разу
-      //оскільки загрузка відбувається 1 раз, перед відправкою запиту, то сенсу нема
-      const cartResponse = await axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/');
-      const favoritesResponse = await axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/favorites/');
-      const itemsResponse = await axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/sneakers/');
+      try {
+          //setIsLoading(true); можна юзати якщо функція відбувається більше 1 разу
+        //оскільки загрузка відбувається 1 раз, перед відправкою запиту, то сенсу нема
+        const [cartResponse, favoritesResponse, itemsResponse] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/'),
+          axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/favorites/'),
+          axios.get('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/sneakers/'),
+        ]);
 
-      setIsLoading(false);
+        setIsLoading(false); 
 
-      setCartItems(cartResponse.data);
-      setFavorites(favoritesResponse.data);
-      setItems(itemsResponse.data);
+        setCartItems(cartResponse.data);
+        setFavorites(favoritesResponse.data);
+        setItems(itemsResponse.data);
+      } catch (error) {
+        alert('Error while requesting data ;(');
+        console.error(error);
+      }
     }
 
     fetchData();
   }, []);
 
   //метод
-  const onAddToCart = (obj) => {
-    if (cartItems.find((item) => Number(item.id) === Number(obj.id))) {
-      axios.put(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/`, {value: cartItems.filter((item) => item.id !== obj.id)});
-      setCartItems(prev => prev.filter(item => Number(item.id) !== Number(obj.id)));
-    } else {
-      setCartItems((prev) => [...prev, obj]);
-      axios.put('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/', {value:  [...cartItems, obj]});
-    };
+  const onAddToCart = async (obj) => {
+    try {
+      if (cartItems.find((item) => Number(item.id) === Number(obj.id))) {
+        await axios.put(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/`, {value: cartItems.filter((item) => item.id !== obj.id)});
+        setCartItems(prev => prev.filter(item => Number(item.id) !== Number(obj.id)));
+      } else {
+        setCartItems((prev) => [...prev, obj]);
+        await axios.put('http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/', {value:  [...cartItems, obj]});
+      };
+    } catch (error) {
+      alert('Error adding to cart');
+      console.error(error);
+    }
   };
 
   const onRemoveItem = (id) => {
-    //console.log(id);
-    axios.put(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/`, {value: cartItems.filter((item) => item.id !== id)});
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    try {
+      axios.put(`http://127.0.0.1:8000/6845ccd8-edf2-4ddb-8b15-e65333e43682/cart/`, {value: cartItems.filter((item) => item.id !== id)});
+      setCartItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      alert('Error deleting from cart');
+      console.error(error);
+    }
   };
 
   const onAddToFavorite = async (obj) => {
@@ -80,6 +96,7 @@ function App() {
       }
     } catch (error) {
       alert('Failed to add to favorites');
+      console.error(error);
     }
   };
 
@@ -96,7 +113,8 @@ function App() {
   return (
     <AppContext.Provider value={{items, cartItems, favorites, isItemAdded, onAddToFavorite, onAddToCart, setCartOpened, setCartItems }}>
         <div className="wrapper clear"> 
-        {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem}/>} 
+          
+        <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem} opened={cartOpened} />
         <Header onClickCart={() => setCartOpened(true)} />
       
         <Routes>
